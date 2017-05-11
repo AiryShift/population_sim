@@ -4,6 +4,8 @@ import sys
 import time
 from collections import Counter
 
+import matplotlib.pyplot as plt
+
 
 def decision(probability):
     return random.random() < probability
@@ -26,13 +28,52 @@ def next_generation(people):
     people.extend(new)
 
 
-def main(args):
-    start_time = time.time()
+def plot(args, data):
+    fig = plt.figure()
+    graph = fig.add_subplot(111)
+    graph.set_title('Number of surnames after n generations')
+    graph.set_xlabel('Generations')
+    graph.set_ylabel('Population count')
 
+    population_over_time = [[] for _ in range(args.people)]
+    for count in data:
+        for name in range(args.people):
+            population_over_time[name].append(count.get(name, 0))
+
+    for name, count in enumerate(population_over_time):
+        graph.plot(range(1, args.generations + 1),
+                   count,
+                   label=str(name),
+                   marker='.')
+
+    font_properties = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+    text = ('Initial unique surnames: {}\n'
+            'Generations: {}\n'
+            'Same name chance: {}\n'
+            'Growth factor: {}'.format(args.people,
+                                       args.generations,
+                                       args.same_name_chance,
+                                       args.growth_factor
+                                       )
+            )
+
+    graph.text(0.05,
+               0.95,
+               text,
+               transform=graph.transAxes,
+               fontsize=13,
+               verticalalignment='top',
+               bbox=font_properties)
+    plt.show()
+
+
+def main(args):
+    data = []
     people = list(range(args.people))
     for generation in range(args.generations):
         print('Current generation:', generation, file=sys.stderr)
         next_generation(people)
+        data.append(Counter(people))
 
     people_frequency = Counter(people)
     print('Occurences')
@@ -40,14 +81,32 @@ def main(args):
         print('{}: {}'.format(last_name, freq))
     print('Total population:', sum(people_frequency.values()))
 
-    print('Took {:.2f}s'.format(time.time() - start_time), file=sys.stderr)
+    plot(args, data)
 
 
 if __name__ == '__main__':
+    start_time = time.time()
     parser = argparse.ArgumentParser('Does some population counting')
-    parser.add_argument('-p', '--people', type=int, default=100, help='Number of people')
-    parser.add_argument('-g', '--generations', type=int, default=120, help='Number of generations')
-    parser.add_argument('-s', '--same-name-chance', type=float, default=0.55, help='Chance that the two children of a couple have the same last name')
-    parser.add_argument('-f', '--growth-factor', type=float, default=1.1, help='Average growth factor of the population')
+    parser.add_argument('-p',
+                        '--people',
+                        type=int,
+                        default=100,
+                        help='Number of people')
+    parser.add_argument('-g',
+                        '--generations',
+                        type=int,
+                        default=120,
+                        help='Number of generations')
+    parser.add_argument('-s',
+                        '--same-name-chance',
+                        type=float,
+                        default=0.55,
+                        help='Chance that the two children of a couple have the same last name')
+    parser.add_argument('-f',
+                        '--growth-factor',
+                        type=float,
+                        default=1.1,
+                        help='Average growth factor of the population')
     args = parser.parse_args()
     main(args)
+    print('Took {:.2f}s'.format(time.time() - start_time), file=sys.stderr)
