@@ -34,6 +34,8 @@ def plot(args, data):
     graph.set_title('Number of surnames after n generations')
     graph.set_xlabel('Generations')
     graph.set_ylabel('Population count')
+    if args.growth_factor > 1:
+        graph.set_yscale('log')
 
     population_over_time = [[] for _ in range(args.people)]
     for count in data:
@@ -49,7 +51,7 @@ def plot(args, data):
     font_properties = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     text = ('Initial unique surnames: {}\n'
             'Generations: {}\n'
-            'Same name chance: {}\n'
+            'Same name probability: {}\n'
             'Growth factor: {}'.format(args.people,
                                        args.generations,
                                        args.same_name_chance,
@@ -67,31 +69,36 @@ def plot(args, data):
     plt.show()
 
 
+def textdump(generation, counter):
+    print('Generation:', generation)
+    for last_name, freq in sorted(counter.items()):
+        print('{}: {}'.format(last_name, freq))
+    print('Total population:', sum(counter.values()))
+
+
 def main(args):
+    start_time = time.time()
     data = []
     people = list(range(args.people))
     for generation in range(args.generations):
         print('Current generation:', generation, file=sys.stderr)
         next_generation(people)
-        data.append(Counter(people))
 
-    people_frequency = Counter(people)
-    print('Occurences')
-    for last_name, freq in sorted(people_frequency.items()):
-        print('{}: {}'.format(last_name, freq))
-    print('Total population:', sum(people_frequency.values()))
+        counter = Counter(people)
+        textdump(generation, counter)
+        data.append(counter)
 
+    print('Took {:.2f}s'.format(time.time() - start_time), file=sys.stderr)
     plot(args, data)
 
 
 if __name__ == '__main__':
-    start_time = time.time()
     parser = argparse.ArgumentParser('Does some population counting')
     parser.add_argument('-p',
                         '--people',
                         type=int,
                         default=100,
-                        help='Number of people')
+                        help='Size of initial population')
     parser.add_argument('-g',
                         '--generations',
                         type=int,
@@ -108,5 +115,5 @@ if __name__ == '__main__':
                         default=1.1,
                         help='Average growth factor of the population')
     args = parser.parse_args()
+    assert(args.growth_factor >= 1)
     main(args)
-    print('Took {:.2f}s'.format(time.time() - start_time), file=sys.stderr)
