@@ -76,6 +76,7 @@ def textdump(generation, counter):
     for last_name, freq in sorted(counter.items()):
         print('{}: {}'.format(last_name, freq))
     print('Total population:', sum(counter.values()))
+    print()
 
 
 def main(args):
@@ -87,7 +88,8 @@ def main(args):
         next_generation(people)
 
         counter = Counter(people)
-        textdump(generation, counter)
+        if args.verbose:
+            textdump(generation, counter)
         data.append(counter)
 
     print('Took {:.2f}s'.format(time.time() - start_time), file=sys.stderr)
@@ -104,9 +106,9 @@ if __name__ == '__main__':
     parser.add_argument('-g',
                         '--generations',
                         type=int,
-                        default=120,
+                        default=100,
                         help='Number of generations')
-    parser.add_argument('-s',
+    parser.add_argument('-c',
                         '--same-name-chance',
                         type=float,
                         default=0.55,
@@ -116,6 +118,11 @@ if __name__ == '__main__':
                         type=float,
                         default=1.1,
                         help='Average growth factor of the population')
+    parser.add_argument('-v',
+                        '--verbose',
+                        action='store_true',
+                        help='Enable verbose output to stdout')
     args = parser.parse_args()
-    assert(args.growth_factor >= 1)
+    if args.growth_factor < 1:
+        parser.error('Growth factor must be at least 1')
     main(args)
